@@ -78,15 +78,20 @@ class MandrillMailer implements \Nette\Mail\IMailer {
             }
             $params['to'][] = $recipient;
         }
-        
+
         $bcc = $message->getHeader('Bcc');
         if (!empty($bcc)) {
             $params['bcc_address'] = $bcc;
         }
 
+		$tags = $message->getHeader('Tags');
+		if ($tags) {
+			$params['tags'] = explode(',', $tags);
+		}
+
         $params['headers'] = array();
         foreach ($message->getHeaders() as $name=>$value) {
-            if (!in_array($name, array('Date', 'Subject', 'MIME-Version', 'Bcc', 'To'))) {
+            if (!in_array($name, array('Date', 'Subject', 'MIME-Version', 'Bcc', 'To', 'Tags'))) {
                 $params['headers'][$name] = $value;
             }
         }
