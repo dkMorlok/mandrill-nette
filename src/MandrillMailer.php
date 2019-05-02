@@ -69,34 +69,48 @@ class MandrillMailer implements \Nette\Mail\IMailer {
         }
         $params['from_email'] = key($from);
         $params['from_name'] = $from[$params['from_email']];
-        $recipients = $message->getHeader('To');
-        $params['to'] = array();
-        foreach ($recipients as $email => $name) {
-            $recipient = array('email' => $email);
-            if (!empty($name)) {
-                $recipient['name'] = $name;
-            }
-            $params['to'][] = $recipient;
-        }
+        $params['to'] = \array_merge(
+            $this->parseNetteRecipients($message, 'to'),
+            $this->parseNetteRecipients($message, 'cc'),
+            $this->parseNetteRecipients($message, 'bcc')
+        );
 
-        $bcc = $message->getHeader('Bcc');
-        if (!empty($bcc)) {
-            $params['bcc_address'] = $bcc;
+        $tags = $message->getHeader('Tags');
+        if ($tags) {
+            $params['tags'] = explode(',', $tags);
         }
-
-		$tags = $message->getHeader('Tags');
-		if ($tags) {
-			$params['tags'] = explode(',', $tags);
-		}
 
         $params['headers'] = array();
         foreach ($message->getHeaders() as $name=>$value) {
-            if (!in_array($name, array('Date', 'Subject', 'MIME-Version', 'Bcc', 'To', 'Tags'))) {
+            if (!in_array($name, array('Date', 'Subject', 'MIME-Version', 'Cc', 'Bcc', 'To', 'Tags'))) {
                 $params['headers'][$name] = $value;
             }
         }
 
         return $params;
+    }
+
+    /**
+     * Parse Nette Message headers for To, Cc or Bcc recipients.
+     * @param \Nette\Mail\Message $message
+     * @param string $type
+     * @return array
+     */
+    private function parseNetteRecipients(\Nette\Mail\Message $message, $type)
+    {
+        $netteRecipients = $message->getHeader(\ucfirst($type));
+        $recipients = array();
+        if (is_array($netteRecipients)) {
+            foreach ($netteRecipients as $email => $name) {
+                $recipient = array('email' => $email);
+                if (!empty($name)) {
+                    $recipient['name'] = $name;
+                }
+                $recipient['type'] = $type;
+                $recipients[] = $recipient;
+            }
+        }
+        return $recipients;
     }
 
     /**
