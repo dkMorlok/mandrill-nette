@@ -121,8 +121,11 @@ class MandrillMailer implements \Nette\Mail\IMailer {
      */
     private function callApi(array $params)
     {
-        $params = array('message' => $params);
-        $params['key'] = $this->apiKey;
+        $params = array(
+            'key' => $this->apiKey,
+            'message' => $params,
+            'async' => true,
+        );
         $params = json_encode($params);
 
         $method = '/messages/send';
