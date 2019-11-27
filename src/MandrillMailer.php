@@ -36,7 +36,7 @@ class MandrillMailer implements \Nette\Mail\IMailer {
      * Sends email via Mandrill.
      * @return void
      */
-    public function send(\Nette\Mail\Message $message)
+    public function send(\Nette\Mail\Message $message): void
     {
         if ($message instanceof Message) {
             $params = $message->getMandrillParams();
