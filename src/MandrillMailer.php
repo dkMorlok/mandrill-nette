@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types = 1);
 
 namespace Fabian\Mandrill;
 
@@ -7,192 +7,194 @@ namespace Fabian\Mandrill;
  *
  * @author Lukas Vana
  */
-class MandrillMailer implements \Nette\Mail\IMailer {
-    /**
-     * Mandrill API key
-     * @var string
-     */
-    private $apiKey;
+class MandrillMailer implements \Nette\Mail\IMailer
+{
 
-    /**
-     * Mandrill API endpoint
-     * @var string
-     */
-    private $apiEndpoint = "https://mandrillapp.com/api/1.0";
+	/**
+	 * Mandrill API key
+	 * @var string
+	 */
+	private $apiKey;
 
-    /**
-     * Input and output format
-     * Currently supported only json;)
-     * @var string
-     */
-    private $apiFormat = 'json';
+	/**
+	 * Mandrill API endpoint
+	 * @var string
+	 */
+	private $apiEndpoint = "https://mandrillapp.com/api/1.0";
 
-    public function __construct($apiKey)
-    {
-        $this->apiKey = $apiKey;
-    }
+	/**
+	 * Input and output format
+	 * Currently supported only json;)
+	 * @var string
+	 */
+	private $apiFormat = 'json';
 
-    /**
-     * Sends email via Mandrill.
-     * @return void
-     */
-    public function send(\Nette\Mail\Message $message): void
-    {
-        if ($message instanceof Message) {
-            $params = $message->getMandrillParams();
-        } else {
-            $params = $this->parseNetteMessage($message);
-        }
-        $attachments = $this->parseAttachments($message);
-        if (!empty($attachments)) {
-             $params['attachments'] = $attachments;
-        }
 
-        $this->callApi($params);
-    }
+	public function __construct($apiKey)
+	{
+		$this->apiKey = $apiKey;
+	}
 
-    /**
-     * Parse Nette Message headers to Mandrill API params
-     * @param \Nette\Mail\Message $message
-     * @return array
-     */
-    private function parseNetteMessage(\Nette\Mail\Message $message)
-    {
-        $params = array();
 
-        $params['subject'] = $message->getSubject();
-        $params['text'] = $message->getBody();
-        $params['html'] = $message->getHtmlBody();
-        $from = $message->getFrom();
-        if (empty($from)) {
-            throw new MandrillException('Please specify From parameter!');
-        }
-        $params['from_email'] = key($from);
-        $params['from_name'] = $from[$params['from_email']];
-        $params['to'] = \array_merge(
-            $this->parseNetteRecipients($message, 'to'),
-            $this->parseNetteRecipients($message, 'cc'),
-            $this->parseNetteRecipients($message, 'bcc')
-        );
+	/**
+	 * Sends email via Mandrill.
+	 */
+	public function send(\Nette\Mail\Message $message): void
+	{
+		if ($message instanceof Message) {
+			$params = $message->getMandrillParams();
+		} else {
+			$params = $this->parseNetteMessage($message);
+		}
+		$attachments = $this->parseAttachments($message);
+		if (\count($attachments) !== 0) {
+			$params['attachments'] = $attachments;
+		}
 
-        $tags = $message->getHeader('Tags');
-        if ($tags) {
-            $params['tags'] = explode(',', $tags);
-        }
+		$this->callApi($params);
+	}
 
-        $params['headers'] = array();
-        foreach ($message->getHeaders() as $name=>$value) {
-            if (!in_array($name, array('Date', 'Subject', 'MIME-Version', 'Cc', 'Bcc', 'To', 'Tags'))) {
-                $params['headers'][$name] = $value;
-            }
-        }
 
-        return $params;
-    }
+	/**
+	 * Parse Nette Message headers to Mandrill API params
+	 */
+	private function parseNetteMessage(\Nette\Mail\Message $message): void
+	{
+		$params = [];
 
-    /**
-     * Parse Nette Message headers for To, Cc or Bcc recipients.
-     * @param \Nette\Mail\Message $message
-     * @param string $type
-     * @return array
-     */
-    private function parseNetteRecipients(\Nette\Mail\Message $message, $type)
-    {
-        $netteRecipients = $message->getHeader(\ucfirst($type));
-        $recipients = array();
-        if (is_array($netteRecipients)) {
-            foreach ($netteRecipients as $email => $name) {
-                $recipient = array('email' => $email);
-                if (!empty($name)) {
-                    $recipient['name'] = $name;
-                }
-                $recipient['type'] = $type;
-                $recipients[] = $recipient;
-            }
-        }
-        return $recipients;
-    }
+		$params['subject'] = $message->getSubject();
+		$params['text'] = $message->getBody();
+		$params['html'] = $message->getHtmlBody();
+		$from = $message->getFrom();
+		if (empty($from)) {
+			throw new MandrillException('Please specify From parameter!');
+		}
+		$params['from_email'] = \key($from);
+		$params['from_name'] = $from[$params['from_email']];
+		$params['to'] = \array_merge(
+			$this->parseNetteRecipients($message, 'to'),
+			$this->parseNetteRecipients($message, 'cc'),
+			$this->parseNetteRecipients($message, 'bcc')
+		);
 
-    /**
-     * Call Mandrill API and send email
-     * @param array $params
-     * @return string
-     * @throws MandrillException
-     */
-    private function callApi(array $params)
-    {
-        $params = array(
-            'key' => $this->apiKey,
-            'message' => $params,
-            'async' => true,
-        );
-        $params = json_encode($params);
+		$tags = $message->getHeader('Tags');
+		if ($tags) {
+			$params['tags'] = \explode(',', $tags);
+		}
 
-        $method = '/messages/send';
+		$params['headers'] = [];
+		foreach ($message->getHeaders() as $name => $value) {
+			if (!\in_array($name, array('Date', 'Subject', 'MIME-Version', 'Cc', 'Bcc', 'To', 'Tags'))) {
+				$params['headers'][$name] = $value;
+			}
+		}
+	}
 
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_USERAGENT, 'Mandrill-Nette-PHP/0.2');
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_HEADER, false);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 600);
-        curl_setopt($ch, CURLOPT_URL, $this->apiEndpoint.$method.'.'
-            .$this->apiFormat);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-            'Content-Type: application/'.$this->apiFormat)
-        );
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
 
-        if (curl_error($ch)) {
-            throw new MandrillException(
-                'curl error while calling '.$method.': '.  curl_error($ch)
-            );
-        }
+	/**
+	 * Parse Nette Message headers for To, Cc or Bcc recipients.
+	 */
+	private function parseNetteRecipients(\Nette\Mail\Message $message, string $type): array
+	{
+		$netteRecipients = $message->getHeader(\ucfirst($type));
+		$recipients = [];
+		if (\is_array($netteRecipients)) {
+			foreach ($netteRecipients as $email => $name) {
+				$recipient = array('email' => $email);
+				if (!empty($name)) {
+					$recipient['name'] = $name;
+				}
+				$recipient['type'] = $type;
+				$recipients[] = $recipient;
+			}
+		}
+		return $recipients;
+	}
 
-        $response = curl_exec($ch);
-        $info = curl_getinfo($ch);
-        $result = json_decode($response, true);
-        if ($result === NULL) {
-            throw new MandrillException('Unable to parse JSON response');
-        }
-        if ($info['http_code'] != 200) {
-            throw new MandrillException('Error '.$info['http_code'].' Message: '.$result['message']);
-        }
 
-        curl_close($ch);
+	/**
+	 * Call Mandrill API and send email
+	 * @throws MandrillException
+	 */
+	private function callApi(array $params): string
+	{
+		$params = [
+			'key' => $this->apiKey,
+			'message' => $params,
+			'async' => true,
+		];
+		$params = \json_encode($params);
 
-        return $result;
-    }
+		$method = '/messages/send';
 
-    private function parseAttachments(\Nette\Mail\Message $message){
-        $attachments = array();
+		$ch = \curl_init();
+		\curl_setopt($ch, CURLOPT_USERAGENT, 'Mandrill-Nette-PHP/0.2');
+		\curl_setopt($ch, CURLOPT_POST, true);
+		\curl_setopt($ch, CURLOPT_HEADER, false);
+		\curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		\curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30);
+		\curl_setopt($ch, CURLOPT_TIMEOUT, 600);
+		\curl_setopt($ch, CURLOPT_URL, $this->apiEndpoint . $method . '.' . $this->apiFormat);
+		\curl_setopt($ch, CURLOPT_HTTPHEADER, [
+			'Content-Type: application/' . $this->apiFormat,
+		]);
+		\curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
 
-        foreach ($message->getAttachments() as $attachment) {
-          $attachments[] = array(
-            'type' => $attachment->getHeader('Content-Type'),
-            'name' => $this->extractFilename($attachment->getHeader('Content-Disposition')),
-            'content' => $this->encodeMessage($attachment)
-          );
-        }
+		if (\curl_error($ch)) {
+			throw new MandrillException(
+				'curl error while calling ' . $method . ': ' . \curl_error($ch)
+			);
+		}
 
-        return $attachments;
-      }
+		$response = (string) \curl_exec($ch);
+		$info = \curl_getinfo($ch);
+		$result = \json_decode($response, true);
+		if ($result === null) {
+			throw new MandrillException('Unable to parse JSON response');
+		}
+		if ((int) $info['http_code'] !== 200) {
+			throw new MandrillException('Error ' . $info['http_code'] . ' Message: ' . $result['message']);
+		}
 
-    private function extractFilename($header){
-        preg_match('/filename="([a-zA-Z0-9. -_]{1,})"/', $header, $matches);
-        return $matches[1];
-    }
+		\curl_close($ch);
 
-    private function encodeMessage($attachment){
-        $lines = explode("\n", $attachment->getEncodedMessage());
+		return $result;
+	}
 
-        $output = '';
 
-        for($i=4; $i < count($lines); $i++){
-          $output .= $lines[$i];
-        }
+	private function parseAttachments(\Nette\Mail\Message $message)
+	{
+		$attachments = [];
 
-        return $output;
-    }
+		foreach ($message->getAttachments() as $attachment) {
+			$attachments[] = array(
+				'type' => $attachment->getHeader('Content-Type'),
+				'name' => $this->extractFilename($attachment->getHeader('Content-Disposition')),
+				'content' => $this->encodeMessage($attachment),
+			);
+		}
+
+		return $attachments;
+	}
+
+
+	private function extractFilename($header)
+	{
+		\preg_match('/filename="([a-zA-Z0-9. -_]{1,})"/', $header, $matches);
+		return $matches[1];
+	}
+
+
+	private function encodeMessage($attachment)
+	{
+		$lines = \explode("\n", $attachment->getEncodedMessage());
+
+		$output = '';
+
+		for ($i = 4; $i < \count($lines); $i++) {
+			$output .= $lines[$i];
+		}
+
+		return $output;
+	}
 }
