@@ -16,10 +16,10 @@ class Message extends \Nette\Mail\Message
 
 
 	/**
-	 * Sets the sender of the message.
-	 * @param string  email or format "John Doe" <doe@example.com>
+	 * Sets the sender of the message. Email or format "John Doe" <doe@example.com>
+	 * @return \Nette\Mail\Message
 	 */
-	public function setFrom(string $email, ?string $name = null): Message
+	public function setFrom(string $email, string $name = null)
 	{
 		$this->mandrillParams['from_email'] = $email;
 		if ($name !== null) {
@@ -32,8 +32,9 @@ class Message extends \Nette\Mail\Message
 
 	/**
 	 * Sets textual body.
+	 * @return static
 	 */
-	public function setBody(string $body): Message
+	public function setBody(string $body)
 	{
 		$this->mandrillParams['text'] = $body;
 
@@ -43,8 +44,9 @@ class Message extends \Nette\Mail\Message
 
 	/**
 	 * Sets HTML body.
+	 * @return static
 	 */
-	public function setHtmlBody(string $html, ?string $basePath = null): Message
+	public function setHtmlBody(string $html, string $basePath = null)
 	{
 		$this->mandrillParams['html'] = $html;
 
@@ -54,8 +56,9 @@ class Message extends \Nette\Mail\Message
 
 	/**
 	 * Sets the subject of the message.
+	 * @return static
 	 */
-	public function setSubject(string $subject): Message
+	public function setSubject(string $subject)
 	{
 		$this->mandrillParams['subject'] = $subject;
 
@@ -64,9 +67,10 @@ class Message extends \Nette\Mail\Message
 
 
 	/**
-	 * Adds email recipient.
+	 * Adds email recipient. Email or format "John Doe" <doe@example.com>
+	 * @return static
 	 */
-	public function addTo(string $email, ?string $name = null): Message
+	public function addTo(string $email, string $name = null)
 	{
 		if (!isset($this->mandrillParams['to'])) {
 			$this->mandrillParams['to'] = [];
@@ -129,7 +133,11 @@ class Message extends \Nette\Mail\Message
 	}
 
 
-	public function addBcc(string $email, ?string $name = null)
+	/**
+	 * Adds blind carbon copy email recipient. Email or format "John Doe" <doe@example.com>
+	 * @return static
+	 */
+	public function addBcc(string $email, string $name = null)
 	{
 		$this->mandrillParams['bcc_address'] = $email;
 
