@@ -137,10 +137,24 @@ class Message extends \Nette\Mail\Message
 	 * Adds blind carbon copy email recipient. Email or format "John Doe" <doe@example.com>
 	 * @return static
 	 */
-	public function addBcc(string $email, string $name = null)
+	public function addBcc(string $email, ?string $name = null): Message
 	{
 		$this->mandrillParams['bcc_address'] = $email;
 
+		return $this;
+	}
+
+
+	/**
+	 * Adds the reply-to address. Email or format "John Doe" <doe@example.com>
+	 * @return static
+	 */
+	public function addReplyTo(string $email, ?string $name = null): Message
+	{
+		if (!isset($this->mandrillParams['headers'])) {
+			$this->mandrillParams['headers'] = [];
+		}
+		$this->mandrillParams['headers']['Reply-To'] = $email;
 		return $this;
 	}
 

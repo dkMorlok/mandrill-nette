@@ -58,7 +58,7 @@ class MandrillMailer implements \Nette\Mail\IMailer
 	/**
 	 * Parse Nette Message headers to Mandrill API params
 	 */
-	private function parseNetteMessage(\Nette\Mail\Message $message): void
+	private function parseNetteMessage(\Nette\Mail\Message $message): array
 	{
 		$params = [];
 
@@ -77,17 +77,29 @@ class MandrillMailer implements \Nette\Mail\IMailer
 			$this->parseNetteRecipients($message, 'bcc')
 		);
 
-		$tags = $message->getHeader('Tags');
-		if ($tags) {
-			$params['tags'] = \explode(',', $tags);
-		}
-
 		$params['headers'] = [];
 		foreach ($message->getHeaders() as $name => $value) {
-			if (!\in_array($name, array('Date', 'Subject', 'MIME-Version', 'Cc', 'Bcc', 'To', 'Tags'))) {
-				$params['headers'][$name] = $value;
+			switch ($name) {
+				case 'Date':
+				case 'Subject':
+				case 'MIME-Version':
+				case 'Cc':
+				case 'Bcc':
+				case 'To':
+					break;
+				case 'Tags':
+					$params['tags'] = \explode(',', $value);
+					break;
+				case 'Reply-To':
+					$params['headers']['Reply-To'] = \array_keys($value)[0];
+					break;
+				default:
+					$params['headers'][$name] = $value;
+					break;
 			}
 		}
+
+		return $params;
 	}
 
 
@@ -100,7 +112,7 @@ class MandrillMailer implements \Nette\Mail\IMailer
 		$recipients = [];
 		if (\is_array($netteRecipients)) {
 			foreach ($netteRecipients as $email => $name) {
-				$recipient = array('email' => $email);
+				$recipient = ['email' => $email];
 				if (!empty($name)) {
 					$recipient['name'] = $name;
 				}
@@ -167,11 +179,11 @@ class MandrillMailer implements \Nette\Mail\IMailer
 		$attachments = [];
 
 		foreach ($message->getAttachments() as $attachment) {
-			$attachments[] = array(
+			$attachments[] = [
 				'type' => $attachment->getHeader('Content-Type'),
 				'name' => $this->extractFilename($attachment->getHeader('Content-Disposition')),
 				'content' => $this->encodeMessage($attachment),
-			);
+			];
 		}
 
 		return $attachments;
