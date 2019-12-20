@@ -126,7 +126,7 @@ class MandrillMailer implements \Nette\Mail\IMailer
 	 * Call Mandrill API and send email
 	 * @throws MandrillException
 	 */
-	private function callApi(array $params): string
+	private function callApi(array $params): array
 	{
 		$params = [
 			'key' => $this->apiKey,
