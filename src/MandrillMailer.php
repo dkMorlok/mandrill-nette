@@ -85,7 +85,6 @@ class MandrillMailer implements \Nette\Mail\IMailer
 				case 'MIME-Version':
 				case 'Cc':
 				case 'Bcc':
-				case 'Reply-To':
 				case 'To':
 					break;
 				case 'Tags':
