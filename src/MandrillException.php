@@ -2,7 +2,7 @@
 
 namespace Fabian\Mandrill;
 
-class MandrillException extends \Exception
+class MandrillException extends \Nette\Mail\SendException
 {
 
 }
