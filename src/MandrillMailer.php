@@ -7,7 +7,7 @@ namespace Fabian\Mandrill;
  *
  * @author Lukas Vana
  */
-class MandrillMailer implements \Nette\Mail\IMailer
+class MandrillMailer implements \Nette\Mail\Mailer
 {
 
 	/**
