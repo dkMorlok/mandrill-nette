@@ -29,10 +29,16 @@ class MandrillMailer implements \Nette\Mail\Mailer
 	 */
 	private $apiFormat = 'json';
 
+	/**
+	 * @var array
+	 */
+	private $defaultMessageOptions;
 
-	public function __construct($apiKey)
+
+	public function __construct(string $apiKey, array $defaultMessageOptions = [])
 	{
 		$this->apiKey = $apiKey;
+		$this->defaultMessageOptions = $defaultMessageOptions;
 	}
 
 
@@ -51,7 +57,7 @@ class MandrillMailer implements \Nette\Mail\Mailer
 			$params['attachments'] = $attachments;
 		}
 
-		$this->callApi($params);
+		$this->callApi(\array_merge($this->defaultMessageOptions, $params));
 	}
 
 
